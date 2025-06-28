@@ -516,6 +516,7 @@ var TimeStep = new Class({
     /**
      * Starts the Time Step running, if it is not already doing so.
      * Called automatically by the Game Boot process.
+     * Does not automatically start the RAF loop - use advanceStep for manual updates.
      *
      * @method Phaser.Core.TimeStep#start
      * @since 3.0.0
@@ -542,10 +543,9 @@ var TimeStep = new Class({
         this.startTime = window.performance.now();
 
         this.callback = callback;
-
-        var step = (this.hasFpsLimit) ? this.stepLimitFPS.bind(this) : this.step.bind(this);
-
-        this.raf.start(step, this.forceSetTimeOut, this._target);
+        
+        // No longer starting the RAF loop automatically
+        // Manual updates should be triggered via advanceStep
     },
 
     /**
@@ -742,6 +742,28 @@ var TimeStep = new Class({
         this.lastTime = time;
 
         this.frame++;
+    },
+
+    /**
+     * Manually advances the TimeStep by triggering the step function.
+     * This should be called externally when manual stepping is desired
+     * instead of the automatic RequestAnimationFrame loop.
+     *
+     * @method Phaser.Core.TimeStep#advanceStep
+     * @since 3.0.0
+     */
+    advanceStep: function ()
+    {
+        var now = window.performance.now();
+
+        if (this.hasFpsLimit)
+        {
+            this.stepLimitFPS(now);
+        }
+        else
+        {
+            this.step(now);
+        }
     },
 
     /**
