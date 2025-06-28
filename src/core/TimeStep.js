@@ -61,6 +61,26 @@ var TimeStep = new Class({
         this.raf = new RequestAnimationFrame();
 
         /**
+         * Tracks if a step has been queued for the current animation frame.
+         *
+         * @name Phaser.Core.TimeStep#updateQueued
+         * @type {boolean}
+         * @default false
+         * @since 3.0.0
+         */
+        this.updateQueued = false;
+
+        /**
+         * ID of the animation frame request used for queued updates.
+         *
+         * @name Phaser.Core.TimeStep#rafID
+         * @type {number}
+         * @default 0
+         * @since 3.0.0
+         */
+        this.rafID = 0;
+
+        /**
          * A flag that is set once the TimeStep has started running and toggled when it stops.
          *
          * @name Phaser.Core.TimeStep#started
@@ -743,26 +763,39 @@ var TimeStep = new Class({
 
         this.frame++;
     },
-
+    
     /**
      * Manually advances the TimeStep by triggering the step function.
      * This should be called externally when manual stepping is desired
      * instead of the automatic RequestAnimationFrame loop.
+     * 
+     * Only one update is queued per animation frame, even if this method 
+     * is called multiple times within the same frame.
      *
      * @method Phaser.Core.TimeStep#advanceStep
      * @since 3.0.0
      */
     advanceStep: function ()
     {
-        var now = window.performance.now();
+        if (!this.updateQueued)
+        {
+            this.updateQueued = true;
 
-        if (this.hasFpsLimit)
-        {
-            this.stepLimitFPS(now);
-        }
-        else
-        {
-            this.step(now);
+            this.rafID = window.requestAnimationFrame(function ()
+            {
+                this.updateQueued = false;
+
+                var now = window.performance.now();
+
+                if (this.hasFpsLimit)
+                {
+                    this.stepLimitFPS(now);
+                }
+                else
+                {
+                    this.step(now);
+                }
+            }.bind(this));
         }
     },
 
